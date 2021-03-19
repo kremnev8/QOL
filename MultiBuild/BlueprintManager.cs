@@ -34,7 +34,8 @@ namespace com.brokenmass.plugin.DSP.MultiBuild
         public static Dictionary<int, PastedEntity> pastedEntities = new Dictionary<int, PastedEntity>();
 
 
-        private static bool useExperimentalWidthFix = false;
+        public static bool useExperimentalWidthFix = false;
+        public static int manualWidthDiff = 0;
         private static float lastMaxWidth = 0;
 
         public static void Reset()
@@ -267,7 +268,7 @@ namespace com.brokenmass.plugin.DSP.MultiBuild
 
             data.copiedBelts.Add(copiedBelt);
 
-            
+
             factory.ReadObjectConn(sourceEntity.id, 4, out _, out otherId, out _);
 
             if (otherId != 0)
@@ -343,7 +344,7 @@ namespace com.brokenmass.plugin.DSP.MultiBuild
                 {
                     if (stationComponent.slots[i].storageIdx != 0)
                     {
-                        copiedBuilding.slotFilters.Add(new BuildingCopy.SlotFilter()
+                        copiedBuilding.slotFilters.Add(new SlotFilter()
                         {
                             slotIndex = i,
                             storageIdx = stationComponent.slots[i].storageIdx
@@ -355,7 +356,7 @@ namespace com.brokenmass.plugin.DSP.MultiBuild
                 {
                     if (stationComponent.storage[i].itemId != 0)
                     {
-                        copiedBuilding.stationSettings.Add(new BuildingCopy.StationSetting()
+                        copiedBuilding.stationSettings.Add(new StationSetting()
                         {
                             index = i,
                             itemId = stationComponent.storage[i].itemId,
@@ -532,7 +533,7 @@ namespace com.brokenmass.plugin.DSP.MultiBuild
                 copiedInserter.startSlot = connectedSlot;
             }
 
-            
+
             factory.ReadObjectConn(sourceEntity.id, 0, out _, out connectedId, out connectedSlot);
             if (connectedId != 0)
             {
@@ -572,16 +573,14 @@ namespace com.brokenmass.plugin.DSP.MultiBuild
                 float sizeDeviation = building.originalSegmentCount / (float)newSegmentCount;
                 if (sizeDeviation > currentMaxWidth)
                     currentMaxWidth = sizeDeviation;
-                
+
 
                 if (useExperimentalWidthFix && sizeDeviation < lastMaxWidth)
                     sizeDeviation = lastMaxWidth;
 
                 sprPos = new Vector2(newRelative.x, newRelative.y * sizeDeviation) + targetSpr;
 
-                Vector3 absoluteBuildingPos = sprPos.ToCartesian(GameMain.localPlanet.realRadius + 0.2f);
-
-                absoluteBuildingPos = GameMain.data.mainPlayer.planetData.aux.Snap(absoluteBuildingPos, true, false);
+                Vector3 absoluteBuildingPos = sprPos.SnapToGrid(GameMain.localPlanet.realRadius + 0.2f);
 
                 Quaternion absoluteBuildingRot = Maths.SphericalRotation(absoluteBuildingPos, yaw + building.cursorRelativeYaw);
                 PrefabDesc desc = GetPrefabDesc(building);
@@ -630,9 +629,7 @@ namespace com.brokenmass.plugin.DSP.MultiBuild
 
                 sprPos = new Vector2(newRelative.x, newRelative.y * sizeDeviation) + targetSpr;
 
-                Vector3 absoluteBeltPos = sprPos.ToCartesian(GameMain.localPlanet.realRadius + 0.2f);
-
-                absoluteBeltPos = GameMain.data.mainPlayer.planetData.aux.Snap(absoluteBeltPos, true, false);
+                Vector3 absoluteBeltPos = sprPos.SnapToGrid(GameMain.localPlanet.realRadius + 0.2f);
 
 
                 // belts have always 0 yaw
@@ -680,7 +677,7 @@ namespace com.brokenmass.plugin.DSP.MultiBuild
                     pastedEntities.TryGetValue(belt.outputId, out PastedEntity otherEntity) &&
                     Vector3.Distance(preview.lpos, otherEntity.buildPreview.lpos) < 20) // if the belts are too far apart ignore connection
                 {
-                    
+
                     preview.output = otherEntity.buildPreview;
                     var otherBelt = data.copiedBelts[otherEntity.index];
 
